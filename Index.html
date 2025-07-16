@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gunfight Unlocker Visualizer</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
 </head>
 <body>
   <div class="container">
     <h1>🔫 Gunfight Arena Unlocker</h1>
-    <textarea id="scriptBox" placeholder="Paste your Lua unlocker script here..."></textarea>
-    <button onclick="runScript()">Run Unlocker</button>
+    <div id="editor">-- Paste your unlocker script here</div>
+    <button onclick="visualizeScript()">Visualize GUI</button>
+    <div id="gui-preview" class="gui-container"></div>
     <div id="status">🛡️ Anti-Detection: Active</div>
   </div>
   <script src="main.js"></script>
