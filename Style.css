@@ -1,1 +1,37 @@
-
+body {
+  background-color: #0f0f0f;
+  color: crimson;
+  font-family: 'Gotham', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+.container {
+  width: 90%;
+  max-width: 600px;
+  text-align: center;
+}
+textarea {
+  width: 100%;
+  height: 200px;
+  background-color: #1a1a1a;
+  color: white;
+  border: 2px solid crimson;
+  padding: 10px;
+  font-size: 14px;
+}
+button {
+  background-color: crimson;
+  color: white;
+  padding: 10px 20px;
+  margin-top: 10px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+#status {
+  margin-top: 15px;
+  font-size: 14px;
+  color: limegreen;
+}
