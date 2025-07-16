@@ -2,24 +2,19 @@ body {
   background-color: #0f0f0f;
   color: crimson;
   font-family: 'Gotham', sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 .container {
   width: 90%;
-  max-width: 600px;
+  max-width: 700px;
+  margin: 40px auto;
   text-align: center;
 }
-textarea {
-  width: 100%;
+#editor {
   height: 200px;
-  background-color: #1a1a1a;
-  color: white;
+  width: 100%;
   border: 2px solid crimson;
-  padding: 10px;
-  font-size: 14px;
 }
 button {
   background-color: crimson;
@@ -27,6 +22,21 @@ button {
   padding: 10px 20px;
   margin-top: 10px;
   border: none;
+  font-weight: bold;
+  cursor: pointer;
+}
+.gui-container {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #1a1a1a;
+  border: 1px solid crimson;
+}
+.mock-gui button {
+  background-color: #333;
+  color: crimson;
+  border: none;
+  padding: 10px;
+  margin: 5px;
   font-weight: bold;
   cursor: pointer;
 }
