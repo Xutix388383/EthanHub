@@ -2,67 +2,188 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Blinker Tracker</title>
+  <title>Blinker Tracker 🌿</title>
   <style>
     body {
-      background: #111;
-      color: #eee;
+      margin: 0;
+      padding: 0;
       font-family: 'Segoe UI', sans-serif;
+      background: url('https://i.imgur.com/7yZJX9V.png') repeat;
+      background-size: 150px;
+      color: #d4f8d4;
       text-align: center;
-      padding: 2em;
     }
-    video, canvas {
-      display: none;
-    }
+
     h1 {
-      color: crimson;
-      font-size: 2em;
-    }
-    .status {
-      font-size: 1.5em;
+      font-size: 2.5em;
+      color: #00ff88;
+      text-shadow: 0 0 10px #00ff88;
       margin-top: 1em;
     }
-    .points {
+
+    .container {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2em;
+      border-radius: 12px;
+      margin: 2em auto;
+      width: 90%;
+      max-width: 700px;
+      box-shadow: 0 0 20px #00ff88;
+    }
+
+    .status, .points {
       font-size: 1.2em;
-      margin-top: 0.5em;
+      margin-top: 1em;
+    }
+
+    video {
+      width: 100%;
+      border-radius: 12px;
+      margin-top: 1em;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    #leaderboard {
+      margin-top: 2em;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 1em;
+      border-radius: 8px;
+    }
+
+    #leaderboard h2 {
+      color: #00ff88;
+      margin-bottom: 0.5em;
+    }
+
+    #leaderboard ul {
+      list-style: none;
+      padding: 0;
+      color: #aaffaa;
+    }
+
+    #usernamePrompt {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      color: #0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+    }
+
+    #usernamePrompt input {
+      padding: 0.5em;
+      font-size: 1.2em;
+      margin-top: 1em;
+      border-radius: 8px;
+      border: none;
+    }
+
+    button {
+      margin-top: 1em;
+      padding: 0.5em 1em;
+      font-size: 1em;
+      background: #00ff88;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <h1>Blinker Tracker 🔥</h1>
-  <p class="status">Initializing camera...</p>
-  <p class="points">Points: 0</p>
-  <video id="video" autoplay></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
+  <div id="usernamePrompt">
+    <h1>Enter Your Blinker Name 🌿</h1>
+    <input type="text" id="usernameInput" placeholder="420King">
+    <button onclick="saveUsername()">Start Tracking</button>
+  </div>
+
+  <div class="container">
+    <h1>Blinker Tracker 🌿</h1>
+    <button onclick="switchCamera()">Switch Camera</button>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <p class="status">Initializing camera...</p>
+    <p class="points">Points: 0</p>
+
+    <div id="leaderboard">
+      <h2>Live Leaderboard</h2>
+      <ul id="leaderboardList"></ul>
+    </div>
+  </div>
 
   <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const statusText = document.querySelector('.status');
-    const pointsText = document.querySelector('.points');
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let statusText = document.querySelector('.status');
+    let pointsText = document.querySelector('.points');
+    let leaderboardList = document.getElementById('leaderboardList');
 
     let tracking = false;
     let startTime = null;
     let points = 0;
+    let username = localStorage.getItem('blinkerUsername') || null;
+    let currentStream = null;
+    let useFrontCamera = true;
 
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-        statusText.textContent = "Camera ready. Waiting for LED...";
-        detectLoop();
-      })
-      .catch(err => {
-        statusText.textContent = "Camera access denied.";
-        console.error(err);
-      });
+    if (username) {
+      document.getElementById('usernamePrompt').style.display = 'none';
+    }
+
+    function saveUsername() {
+      const input = document.getElementById('usernameInput').value.trim();
+      if (input) {
+        username = input;
+        localStorage.setItem('blinkerUsername', username);
+        document.getElementById('usernamePrompt').style.display = 'none';
+        initCamera();
+      }
+    }
+
+    function initCamera() {
+      const constraints = {
+        video: {
+          facingMode: useFrontCamera ? 'user' : 'environment'
+        }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+          if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+          }
+          currentStream = stream;
+          video.srcObject = stream;
+          statusText.textContent = "Camera ready. Waiting for LED...";
+          detectLoop();
+        })
+        .catch(err => {
+          statusText.textContent = "Camera access denied.";
+          console.error(err);
+        });
+    }
+
+    function switchCamera() {
+      useFrontCamera = !useFrontCamera;
+      initCamera();
+    }
 
     function detectLoop() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const brightness = getAverageBrightness(frame.data);
+      const brightness = detectSmallBrightSpots(frame.data);
 
-      const LED_THRESHOLD = 180; // tweak this based on lighting
+      const LED_THRESHOLD = 200;
 
       if (brightness > LED_THRESHOLD) {
         if (!tracking) {
@@ -81,13 +202,14 @@
       requestAnimationFrame(detectLoop);
     }
 
-    function getAverageBrightness(data) {
-      let total = 0;
+    function detectSmallBrightSpots(data) {
+      let brightPixels = 0;
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i], g = data[i+1], b = data[i+2];
-        total += (r + g + b) / 3;
+        const brightness = (r + g + b) / 3;
+        if (brightness > 220) brightPixels++;
       }
-      return total / (data.length / 4);
+      return brightPixels < 500 ? brightness : 0; // ignore large bright areas
     }
 
     function handleHit(seconds) {
@@ -105,7 +227,25 @@
       }
       statusText.textContent = message;
       pointsText.textContent = `Points: ${points}`;
+      updateLeaderboard();
     }
+
+    function updateLeaderboard() {
+      let board = JSON.parse(localStorage.getItem('blinkerLeaderboard') || '{}');
+      board[username] = points;
+      localStorage.setItem('blinkerLeaderboard', JSON.stringify(board));
+
+      leaderboardList.innerHTML = '';
+      Object.entries(board)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([name, score]) => {
+          const li = document.createElement('li');
+          li.textContent = `${name}: ${score} pts`;
+          leaderboardList.appendChild(li);
+        });
+    }
+
+    if (username) initCamera();
   </script>
 </body>
 </html>
