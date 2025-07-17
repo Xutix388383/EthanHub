@@ -1,468 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>420 LED Hit Tracker</title>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-<style>
-  /* Reset & base */
-  * {
-    box-sizing: border-box;
-  }
-  body, html {
-    margin: 0; padding: 0;
-    height: 100%;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #0a1a0a;
-    color: #a0d468;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-  }
-  /* Live animated background canvas */
-  #bgCanvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    background: #0a1a0a;
-  }
-  /* Container */
-  #app {
-    max-width: 400px;
-    width: 90vw;
-    margin-top: 1rem;
-    background: rgba(0, 50, 0, 0.7);
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 0 20px #33bb33aa;
-    user-select: none;
-  }
-  h1 {
-    margin: 0 0 0.5rem 0;
-    font-weight: 700;
-    text-align: center;
-    color: #a0d468;
-    text-shadow: 0 0 5px #33bb33aa;
-  }
-  #videoContainer {
-    position: relative;
-    width: 100%;
-    height: 270px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 0 12px #33bb33cc;
-    background: black;
-  }
-  video, canvas#overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 12px;
-  }
-  /* Detection box styling */
-  #overlay {
-    pointer-events: none;
-  }
-  /* Status and points */
-  #status {
-    margin-top: 1rem;
-    text-align: center;
-    font-size: 1.2rem;
-    line-height: 1.4;
-  }
-  #points {
-    margin-top: 0.5rem;
-    font-weight: 700;
-    font-size: 1.4rem;
-    text-align: center;
-    color: #7fca00;
-    text-shadow: 0 0 6px #7fca00dd;
-  }
-  #message {
-    margin-top: 0.8rem;
-    text-align: center;
-    font-size: 1.1rem;
-    color: #ff4444;
-    font-weight: 600;
-    min-height: 1.5em;
-    transition: opacity 0.5s ease;
-  }
-  /* Tutorial overlay */
-  #tutorial {
-    position: fixed;
-    top: 10vh;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 380px;
-    background: rgba(0, 80, 0, 0.9);
-    border-radius: 12px;
-    padding: 1rem 1.5rem;
-    box-shadow: 0 0 15px #33bb33cc;
-    color: #c0f080;
-    font-size: 1rem;
-    line-height: 1.4;
-    z-index: 10;
-    user-select: none;
-  }
-  #tutorial button {
-    margin-top: 1rem;
-    background: #33bb33;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-weight: 700;
-    color: #003300;
-    cursor: pointer;
-    box-shadow: 0 0 8px #33bb33cc;
-    transition: background-color 0.3s ease;
-  }
-  #tutorial button:hover {
-    background: #55dd55;
-  }
-  /* Loading spinner */
-  #loading {
-    position: fixed;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    border: 6px solid #222;
-    border-top: 6px solid #33bb33;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 1s linear infinite;
-    z-index: 20;
-  }
-  @keyframes spin {
-    0% {transform: translate(-50%, -50%) rotate(0deg);}
-    100% {transform: translate(-50%, -50%) rotate(360deg);}
-  }
-  /* Bio section */
-  #bio {
-    margin-top: 1rem;
-    font-size: 0.85rem;
-    color: #7fca00cc;
-    text-align: center;
-    user-select: none;
-  }
-  /* Responsive */
-  @media (max-width: 420px) {
-    #app {
-      max-width: 100vw;
-      border-radius: 0;
-      box-shadow: none;
+  <meta charset="UTF-8">
+  <title>Blinker Tracker</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      padding: 2em;
     }
-  }
-</style>
+    video, canvas {
+      display: none;
+    }
+    h1 {
+      color: crimson;
+      font-size: 2em;
+    }
+    .status {
+      font-size: 1.5em;
+      margin-top: 1em;
+    }
+    .points {
+      font-size: 1.2em;
+      margin-top: 0.5em;
+    }
+  </style>
 </head>
 <body>
+  <h1>Blinker Tracker 🔥</h1>
+  <p class="status">Initializing camera...</p>
+  <p class="points">Points: 0</p>
+  <video id="video" autoplay></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
 
-<canvas id="bgCanvas"></canvas>
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const statusText = document.querySelector('.status');
+    const pointsText = document.querySelector('.points');
 
-<div id="loading" aria-label="Loading indicator"></div>
+    let tracking = false;
+    let startTime = null;
+    let points = 0;
 
-<div id="tutorial" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle" aria-describedby="tutorialDesc">
-  <h2 id="tutorialTitle">Welcome to the 420 LED Hit Tracker</h2>
-  <p id="tutorialDesc">
-    Allow camera access and position your face so your mouth is visible on screen.<br>
-    The green box will track your mouth automatically.<br>
-    Shine your cart LED inside the box to start tracking your hits.<br>
-    Hits longer than 10 seconds count as a blink and award 10 points.<br>
-    If you hold the hit longer or double hit, the app will guide you.<br>
-    Have fun and remember to take breaks!
-  </p>
-  <button id="startBtn">Got it! Start Tracking</button>
-</div>
-
-<div id="app" aria-live="polite" aria-atomic="true" aria-relevant="text" hidden>
-  <h1>420 LED Hit Tracker</h1>
-  <div id="videoContainer">
-    <video id="video" autoplay muted playsinline playsinline></video>
-    <canvas id="overlay"></canvas>
-  </div>
-  <div id="status" aria-label="Current hit duration and blink count">
-    <div>Current Hit Duration: <span id="hitDuration">0.0</span> seconds</div>
-    <div>Total Blinks: <span id="blinkCount">0</span></div>
-  </div>
-  <div id="points">Points: <span id="pointsCount">0</span></div>
-  <div id="message" aria-live="assertive" aria-atomic="true"></div>
-  <div id="bio">
-    Made with <span aria-label="love">❤️</span> for the 420 community. Keep it chill and enjoy the vibes.
-  </div>
-</div>
-
-<script>
-(async () => {
-  const loadingEl = document.getElementById('loading');
-  const tutorialEl = document.getElementById('tutorial');
-  const startBtn = document.getElementById('startBtn');
-  const appEl = document.getElementById('app');
-  const video = document.getElementById('video');
-  const overlay = document.getElementById('overlay');
-  const ctx = overlay.getContext('2d');
-  const hitDurationEl = document.getElementById('hitDuration');
-  const blinkCountEl = document.getElementById('blinkCount');
-  const pointsCountEl = document.getElementById('pointsCount');
-  const messageEl = document.getElementById('message');
-  const bgCanvas = document.getElementById('bgCanvas');
-  const bgCtx = bgCanvas.getContext('2d');
-
-  // State variables
-  let stream = null;
-  let ledOn = false;
-  let hitStartTime = 0;
-  let blinkCount = 0;
-  let points = 0;
-  let doubleHitTimeout = null;
-  let isTakingBreak = false;
-
-  // LED detection parameters
-  const brightnessThreshold = 220;
-  const minBrightPixels = 15;
-
-  // Mouth box position (updated each frame)
-  let mouthBox = { x: 0, y: 0, width: 80, height: 60 };
-
-  // Setup background animation (slow floating green circles)
-  let circles = [];
-  function initCircles() {
-    circles = [];
-    const count = 40;
-    for (let i = 0; i < count; i++) {
-      circles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        radius: 10 + Math.random() * 20,
-        speed: 0.1 + Math.random() * 0.3,
-        alpha: 0.1 + Math.random() * 0.15,
-        direction: Math.random() > 0.5 ? 1 : -1
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+        statusText.textContent = "Camera ready. Waiting for LED...";
+        detectLoop();
+      })
+      .catch(err => {
+        statusText.textContent = "Camera access denied.";
+        console.error(err);
       });
-    }
-  }
-  function drawBackground() {
-    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-    circles.forEach(c => {
-      c.x += c.speed * c.direction;
-      if (c.x > window.innerWidth + c.radius) c.x = -c.radius;
-      if (c.x < -c.radius) c.x = window.innerWidth + c.radius;
-      bgCtx.beginPath();
-      bgCtx.arc(c.x, c.y, c.radius, 0, Math.PI * 2);
-      bgCtx.fillStyle = `rgba(50, 150, 50, ${c.alpha})`;
-      bgCtx.shadowColor = `rgba(100, 255, 100, ${c.alpha})`;
-      bgCtx.shadowBlur = 15;
-      bgCtx.fill();
-    });
-    requestAnimationFrame(drawBackground);
-  }
 
-  function resizeBgCanvas() {
-    bgCanvas.width = window.innerWidth;
-    bgCanvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', () => {
-    resizeBgCanvas();
-    initCircles();
-  });
+    function detectLoop() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const brightness = getAverageBrightness(frame.data);
 
-  resizeBgCanvas();
-  initCircles();
-  drawBackground();
+      const LED_THRESHOLD = 180; // tweak this based on lighting
 
-  // Load face-api models
-  loadingEl.style.display = 'block';
-  await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
-  await faceapi.nets.faceLandmark68TinyNet.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/weights/');
-  loadingEl.style.display = 'none';
-
-  // Start camera function
-  async function startCamera() {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-      video.srcObject = stream;
-      await video.play();
-    } catch (e) {
-      alert('Camera access denied or unavailable. Please reload and allow camera access.');
-      throw e;
-    }
-  }
-
-  // Stop camera
-  function stopCamera() {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
-  }
-
-  // Hidden canvas for pixel analysis
-  const hiddenCanvas = document.createElement('canvas');
-  const hiddenCtx = hiddenCanvas.getContext('2d');
-
-  // Detect LED brightness inside mouth box
-  function detectLed(frame, box) {
-    let brightPixels = 0;
-    const startX = Math.max(0, box.x);
-    const startY = Math.max(0, box.y);
-    const endX = Math.min(frame.width, box.x + box.width);
-    const endY = Math.min(frame.height, box.y + box.height);
-
-    for (let y = startY; y < endY; y++) {
-      for (let x = startX; x < endX; x++) {
-        const i = (y * frame.width + x) * 4;
-        const r = frame.data[i];
-        const g = frame.data[i + 1];
-        const b = frame.data[i + 2];
-        const brightness = (r + g + b) / 3;
-        if (brightness > brightnessThreshold) {
-          brightPixels++;
-          if (brightPixels > minBrightPixels) return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Draw green rounded rectangle for mouth box
-  function drawMouthBox(box) {
-    const radius = 12;
-    ctx.clearRect(0, 0, overlay.width, overlay.height);
-    ctx.strokeStyle = '#7fff00';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = '#7fff0099';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.moveTo(box.x + radius, box.y);
-    ctx.lineTo(box.x + box.width - radius, box.y);
-    ctx.quadraticCurveTo(box.x + box.width, box.y, box.x + box.width, box.y + radius);
-    ctx.lineTo(box.x + box.width, box.y + box.height - radius);
-    ctx.quadraticCurveTo(box.x + box.width, box.y + box.height, box.x + box.width - radius, box.y + box.height);
-    ctx.lineTo(box.x + radius, box.y + box.height);
-    ctx.quadraticCurveTo(box.x, box.y + box.height, box.x, box.y + box.height - radius);
-    ctx.lineTo(box.x, box.y + radius);
-    ctx.quadraticCurveTo(box.x, box.y, box.x + radius, box.y);
-    ctx.stroke();
-  }
-
-  // Main update loop
-  async function update() {
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      overlay.width = video.videoWidth;
-      overlay.height = video.videoHeight;
-      hiddenCanvas.width = video.videoWidth;
-      hiddenCanvas.height = video.videoHeight;
-
-      hiddenCtx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-      const frame = hiddenCtx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-
-      // Detect face with landmarks
-      const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks(true);
-
-      if (detection && detection.landmarks) {
-        const mouth = detection.landmarks.getMouth();
-
-        // Calculate bounding box around mouth with padding
-        const xs = mouth.map(p => p.x);
-        const ys = mouth.map(p => p.y);
-        const minX = Math.max(0, Math.min(...xs) - 15);
-        const minY = Math.max(0, Math.min(...ys) - 15);
-        const maxX = Math.min(overlay.width, Math.max(...xs) + 15);
-        const maxY = Math.min(overlay.height, Math.max(...ys) + 15);
-
-        mouthBox = {
-          x: Math.floor(minX),
-          y: Math.floor(minY),
-          width: Math.floor(maxX - minX),
-          height: Math.floor(maxY - minY)
-        };
-      } else {
-        // If no face detected, fallback to center box
-        mouthBox = {
-          x: Math.floor((overlay.width - 80) / 2),
-          y: Math.floor((overlay.height - 60) / 2),
-          width: 80,
-          height: 60
-        };
-      }
-
-      drawMouthBox(mouthBox);
-
-      const ledDetected = detectLed(frame, mouthBox);
-
-      if (ledDetected) {
-        if (!ledOn) {
-          ledOn = true;
-          hitStartTime = performance.now();
-          messageEl.style.opacity = '1';
-          messageEl.textContent = '';
-          if (doubleHitTimeout) {
-            clearTimeout(doubleHitTimeout);
-            doubleHitTimeout = null;
-          }
-        }
-        const duration = (performance.now() - hitStartTime) / 1000;
-        hitDurationEl.textContent = duration.toFixed(1);
-
-        if (duration >= 20 && !isTakingBreak) {
-          messageEl.textContent = 'Whoa! Take a break and breathe.';
-          isTakingBreak = true;
-        } else if (duration >= 15 && !isTakingBreak) {
-          messageEl.textContent = 'Almost there! Keep it steady.';
-        } else if (duration >= 10 && !isTakingBreak) {
-          messageEl.textContent = 'Blink detected! Keep going or stop.';
+      if (brightness > LED_THRESHOLD) {
+        if (!tracking) {
+          tracking = true;
+          startTime = Date.now();
+          statusText.textContent = "LED detected! Counting...";
         }
       } else {
-        if (ledOn) {
-          ledOn = false;
-          const hitTime = (performance.now() - hitStartTime) / 1000;
-          hitDurationEl.textContent = '0.0';
-
-          if (hitTime >= 10) {
-            blinkCount++;
-            points += 10;
-            blinkCountEl.textContent = blinkCount;
-            pointsCountEl.textContent = points;
-          }
-
-          doubleHitTimeout = setTimeout(() => {
-            doubleHitTimeout = null;
-            messageEl.style.opacity = '0';
-            isTakingBreak = false;
-          }, 15000);
-        } else {
-          hitDurationEl.textContent = '0.0';
+        if (tracking) {
+          const duration = (Date.now() - startTime) / 1000;
+          tracking = false;
+          handleHit(duration);
         }
       }
+
+      requestAnimationFrame(detectLoop);
     }
-    requestAnimationFrame(update);
-  }
 
-  // Start button handler
-  startBtn.addEventListener('click', async () => {
-    tutorialEl.hidden = true;
-    appEl.hidden = false;
-    loadingEl.style.display = 'block';
-    try {
-      await startCamera();
-      loadingEl.style.display = 'none';
-      update    } catch (e) {
-      loadingEl.style.display = 'none';
-      alert('Failed to start camera. Please reload and allow camera access.');
-      console.error(e);
+    function getAverageBrightness(data) {
+      let total = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i], g = data[i+1], b = data[i+2];
+        total += (r + g + b) / 3;
+      }
+      return total / (data.length / 4);
     }
-  });
 
-  // Cleanup on unload
-  window.addEventListener('beforeunload', () => {
-    stopCamera();
-  });
-})();
-</script>
-
+    function handleHit(seconds) {
+      let message = `Hit lasted ${seconds.toFixed(1)}s.`;
+      if (seconds >= 20) {
+        message += " 🚨 Take a break and breathe!";
+      } else if (seconds >= 15) {
+        points += 15;
+        message += " 💀 Double Rip Demon! +15 points";
+      } else if (seconds >= 10) {
+        points += 10;
+        message += " 🔥 Blinker! +10 points";
+      } else {
+        message += " 😶 Not a blinker.";
+      }
+      statusText.textContent = message;
+      pointsText.textContent = `Points: ${points}`;
+    }
+  </script>
 </body>
 </html>
