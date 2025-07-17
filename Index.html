@@ -1,24 +1,280 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Script Previewer</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cart LED Hit Tracker with Detection Box</title>
+<style>
+  body {
+    margin: 0; 
+    font-family: Arial, sans-serif; 
+    background: #111; 
+    color: #eee; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: flex-start; 
+    min-height: 100vh; 
+    padding: 1rem;
+  }
+  h1 {
+    margin-bottom: 0.25rem;
+  }
+  #videoContainer {
+    position: relative;
+    width: 360px;
+    height: 270px;
+    margin-bottom: 1rem;
+  }
+  video, canvas {
+    width: 360px;
+    height: 270px;
+    border-radius: 12px;
+    background: black;
+  }
+  #overlay {
+    position: absolute;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+  #status {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  #points {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  #message {
+    font-size: 1.3rem;
+    color: #f55;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    min-height: 1.5em;
+  }
+  #instructions {
+    max-width: 360px;
+    font-size: 0.9rem;
+    color: #aaa;
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+  button#retry {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    background: #0a0;
+    color: white;
+    cursor: pointer;
+  }
+  button#retry:hover {
+    background: #0f0;
+  }
+</style>
 </head>
 <body>
-  <div class="layout">
-    <aside class="sidebar">
-      <h2>🧠 Script History</h2>
-      <ul id="historyList"></ul>
-    </aside>
-    <main class="main-panel">
-      <h1>🚀 Script Previewer</h1>
-      <div id="editor">-- Paste your Lua unlocker script here</div>
-      <div id="gui-preview" class="preview-panel"></div>
-    </main>
-  </div>
-  <script src="main.js"></script>
+
+<h1>Cart LED Hit Tracker</h1>
+
+<div id="videoContainer">
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="overlay"></canvas>
+</div>
+
+<div id="status">
+  <div>Current Hit Duration: <span id="hitDuration">0.0</span> seconds</div>
+  <div>Total Blinks: <span id="blinkCount">0</span></div>
+</div>
+
+<div id="points">Points: <span id="pointsCount">0</span></div>
+
+<div id="message"></div>
+
+<div id="instructions">
+  <p>Allow camera access. Position your cart LED <strong>inside the green box</strong> shown on the video feed. Only LED inside this box will be detected.</p>
+  <p>Hits longer than 10 seconds count as a blink and award 10 points. Double hits (LED turning on again before 15 seconds) add to your count.</p>
+  <p>If you hit for more than 20 seconds continuously, the app will remind you to take a break and breathe.</p>
+</div>
+
+<button id="retry" style="display:none;">Retry Camera Access</button>
+
+<script>
+(async () => {
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const ctx = overlay.getContext('2d');
+  const hitDurationEl = document.getElementById('hitDuration');
+  const blinkCountEl = document.getElementById('blinkCount');
+  const pointsCountEl = document.getElementById('pointsCount');
+  const messageEl = document.getElementById('message');
+  const retryBtn = document.getElementById('retry');
+
+  let stream = null;
+
+  // LED detection parameters
+  const brightnessThreshold = 220; // pixel brightness threshold
+  const minBrightPixels = 15;      // minimum bright pixels to count as LED on
+
+  // Detection box size and position (centered)
+  const boxWidth = 80;
+  const boxHeight = 60;
+
+  // State variables
+  let ledOn = false;
+  let hitStartTime = 0;
+  let blinkCount = 0;
+  let points = 0;
+  let doubleHitTimeout = null;
+  let isTakingBreak = false;
+
+  // Start camera
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      video.srcObject = stream;
+      retryBtn.style.display = 'none';
+      messageEl.textContent = '';
+      isTakingBreak = false;
+    } catch (err) {
+      alert('Camera access denied or not available. Please allow camera access and reload.');
+      retryBtn.style.display = 'inline-block';
+      console.error(err);
+    }
+  }
+
+  // Stop camera
+  function stopCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+  }
+
+  retryBtn.addEventListener('click', async () => {
+    stopCamera();
+    await startCamera();
+  });
+
+  // Hidden canvas for pixel analysis
+  const hiddenCanvas = document.createElement('canvas');
+  const hiddenCtx = hiddenCanvas.getContext('2d');
+
+  // Detect LED by counting bright pixels inside the detection box
+  function detectLed(frame, boxX, boxY, boxW, boxH) {
+    let brightPixels = 0;
+
+    // Clamp box to frame boundaries
+    const startX = Math.max(0, boxX);
+    const startY = Math.max(0, boxY);
+    const endX = Math.min(frame.width, boxX + boxW);
+    const endY = Math.min(frame.height, boxY + boxH);
+
+    for (let y = startY; y < endY; y++) {
+      for (let x = startX; x < endX; x++) {
+        const i = (y * frame.width + x) * 4;
+        const r = frame.data[i];
+        const g = frame.data[i + 1];
+        const b = frame.data[i + 2];
+        const brightness = (r + g + b) / 3;
+        if (brightness > brightnessThreshold) {
+          brightPixels++;
+          if (brightPixels > minBrightPixels) {
+            return true; // LED detected ON inside box
+          }
+        }
+      }
+    }
+    return false; // LED OFF or outside box
+  }
+
+  // Main update loop
+  async function update() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      overlay.width = video.videoWidth;
+      overlay.height = video.videoHeight;
+      hiddenCanvas.width = video.videoWidth;
+      hiddenCanvas.height = video.videoHeight;
+
+      hiddenCtx.drawImage(video, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+      const frame = hiddenCtx.getImageData(0, 0, hiddenCanvas.width, hiddenCanvas.height);
+
+      // Calculate detection box position (centered)
+      const boxX = Math.floor((frame.width - boxWidth) / 2);
+      const boxY = Math.floor((frame.height - boxHeight) / 2);
+
+      // Draw detection box on overlay
+      ctx.clearRect(0, 0, overlay.width, overlay.height);
+      ctx.strokeStyle = 'lime';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+      // Detect LED inside box
+      const ledDetected = detectLed(frame, boxX, boxY, boxWidth, boxHeight);
+
+      if (ledDetected) {
+        if (!ledOn) {
+          // LED just turned ON
+          ledOn = true;
+          hitStartTime = performance.now();
+          messageEl.textContent = '';
+          if (doubleHitTimeout) {
+            clearTimeout(doubleHitTimeout);
+            doubleHitTimeout = null;
+          }
+        }
+        // Update hit duration
+        const duration = (performance.now() - hitStartTime) / 1000;
+        hitDurationEl.textContent = duration.toFixed(1);
+
+        // Check thresholds for messages and points
+        if (duration >= 20 && !isTakingBreak) {
+          messageEl.textContent = 'Whoa! Take a break and breathe.';
+          isTakingBreak = true;
+        } else if (duration >= 15 && !isTakingBreak) {
+          messageEl.textContent = 'Almost there! Keep it steady.';
+        } else if (duration >= 10 && !isTakingBreak) {
+          messageEl.textContent = 'Blink detected! Keep going or stop.';
+        }
+
+      } else {
+        if (ledOn) {
+          // LED just turned OFF
+          ledOn = false;
+          const hitTime = (performance.now() - hitStartTime) / 1000;
+          hitDurationEl.textContent = '0.0';
+
+          // Count blinks and points based on hit duration
+          if (hitTime >= 10) {
+            blinkCount++;
+            points += 10;
+            blinkCountEl.textContent = blinkCount;
+            pointsCountEl.textContent = points;
+          }
+
+          // Start timeout to detect double hits within 15 seconds
+          doubleHitTimeout = setTimeout(() => {
+            doubleHitTimeout = null;
+            messageEl.textContent = '';
+            isTakingBreak = false;
+          }, 15000);
+        } else {
+          // LED off, no ongoing hit
+          hitDurationEl.textContent = '0.0';
+        }
+      }
+    }
+    requestAnimationFrame(update);
+  }
+
+  await startCamera();
+  update();
+
+  window.addEventListener('beforeunload', () => stopCamera());
+})();
+</script>
+
 </body>
 </html>
