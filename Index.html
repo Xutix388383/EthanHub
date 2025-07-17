@@ -1,39 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blinker Tracker 🌿</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Blinker Tracker Pro (Static)</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Include Tailwind CSS via CDN for simplicity in a static file -->
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <!-- Username Prompt -->
-  <div id="usernamePrompt" role="dialog" aria-label="Username Entry">
-    <h1>Enter Your Blinker Name 🌿</h1>
-    <input type="text" id="usernameInput" placeholder="420King" aria-label="Username">
-    <button id="startBtn">Start Tracking</button>
-  </div>
-
-  <!-- Main Container -->
-  <div class="container" aria-live="polite">
-    <h1>Blinker Tracker 🌿</h1>
-    <button id="switchBtn">Switch Camera</button>
-    <video id="video" autoplay playsinline muted></video>
-    <canvas id="canvas" width="640" height="480"></canvas>
-    <p class="status">Initializing camera...</p>
-    <p class="points">Points: 0</p>
-
-    <!-- Leaderboard -->
-    <div id="leaderboard">
-      <h2>Live Leaderboard</h2>
-      <ul id="leaderboardList"></ul>
+<body class="bg-gray-950 text-white font-sans">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 z-0">
+        <div class="absolute inset-0 bg-gradient-to-br from-emerald-950 via-green-900 to-teal-900"></div>
+        <!-- Floating weed leaves -->
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="absolute animate-pulse opacity-10" style="left: 10%; top: 20%; animation-delay: 0s; animation-duration: 3s;">
+                <div class="text-6xl text-green-400 animate-bounce" style="animation-delay: 0s;">🌿</div>
+            </div>
+            <div class="absolute animate-pulse opacity-10" style="left: 70%; top: 50%; animation-delay: 1s; animation-duration: 4s;">
+                <div class="text-6xl text-green-400 animate-bounce" style="animation-delay: 1s;">🌿</div>
+            </div>
+            <div class="absolute animate-pulse opacity-10" style="left: 30%; top: 80%; animation-delay: 2s; animation-duration: 5s;">
+                <div class="text-6xl text-green-400 animate-bounce" style="animation-delay: 2s;">🌿</div>
+            </div>
+            <div class="absolute animate-pulse opacity-10" style="left: 50%; top: 10%; animation-delay: 0.5s; animation-duration: 3.5s;">
+                <div class="text-6xl text-green-400 animate-bounce" style="animation-delay: 0.5s;">🌿</div>
+            </div>
+            <div class="absolute animate-pulse opacity-10" style="left: 85%; top: 70%; animation-delay: 2.5s; animation-duration: 4.5s;">
+                <div class="text-6xl text-green-400 animate-bounce" style="animation-delay: 2.5s;">🌿</div>
+            </div>
+            <!-- Additional floating elements -->
+            <div class="absolute animate-ping opacity-5" style="left: 20%; top: 40%; animation-delay: 0s; animation-duration: 2s;">
+                <div class="text-4xl text-gray-400">💨</div>
+            </div>
+            <div class="absolute animate-ping opacity-5" style="left: 60%; top: 80%; animation-delay: 1.5s; animation-duration: 3s;">
+                <div class="text-4xl text-gray-400">💨</div>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Sound Effects -->
-  <audio id="blinkerSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+    <!-- Username Dialog -->
+    <div id="username-dialog" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/95 backdrop-blur-md">
+        <div class="bg-gray-900/95 border-emerald-500/50 backdrop-blur-md p-8 rounded-lg shadow-2xl max-w-md w-full">
+            <h2 class="text-emerald-400 text-center text-3xl font-bold mb-2">🌿 AI-Powered Blinker Tracker</h2>
+            <p class="text-emerald-200 text-center mb-4">Professional cart LED detection system</p>
+            <p id="device-id-display" class="text-gray-400 text-center text-sm mb-4"></p>
+            <div class="space-y-4">
+                <input type="text" id="username-input" placeholder="Enter your username"
+                       class="w-full px-4 py-2 rounded-md bg-gray-800/80 border border-emerald-500/50 text-emerald-100 focus:border-emerald-400 focus:ring-emerald-400 outline-none">
+                <button id="start-tracking-button"
+                        class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    Start AI Tracking
+                </button>
+            </div>
+        </div>
+    </div>
 
-  <!-- Scripts -->
-  <script src="main.js" defer></script>
+    <!-- Main Interface -->
+    <div id="main-interface" class="relative z-10 container mx-auto max-w-7xl p-4 hidden">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-400 to-teal-400 mb-2 animate-pulse">
+                AI Blinker Tracker Pro
+            </h1>
+            <p class="text-emerald-200 text-lg">Advanced LED Detection & Performance Analytics</p>
+            <div class="flex justify-center gap-2 mt-4">
+                <span class="inline-flex items-center rounded-full border border-emerald-500/50 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span id="display-username"></span>
+                </span>
+                <span class="inline-flex items-center rounded-full border border-blue-500/50 bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M4.5 15.5A9.5 9.5 0 0 1 12 22a9.5 9.5 0 0 1 7.5-6.5"/><path d="M12 12h.01"/></svg>
+                    AI Powered
+                </span>
+                <span class="inline-flex items-center rounded-full border border-purple-500/50 bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    LED Detection
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Camera & Detection -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Camera Controls -->
+                <div class="rounded-lg border border-emerald-500/30 bg-gray-900/80 backdrop-blur-md shadow-2xl shadow-emerald-500/10 p-6">
+                    <h3 class="text-emerald-400 text-lg font-semibold flex items-center gap-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        AI Camera Control
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <select id="camera-select" class="w-full px-4 py-2 rounded-md bg-gray-800/80 border border-emerald-500/50 text-emerald-100 focus:border-emerald-400 focus:ring-emerald-400 outline-none">
+                            <!-- Options will be populated by JS -->
+                        </select>
+                        <button id="toggle-camera-button"
+                                class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-3 rounded-lg shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            Start Camera
+                        </button>
+                    </div>
+                    <div id="camera-error" class="text-red-400 text-sm bg-red-500/20 p-3 rounded-lg border border-red-500/50 backdrop-blur-sm mt-4 hidden"></div>
+                </div>
+
+                <!-- Video Feed -->
+                <div class="rounded-lg border border-emerald-500/30 bg-gray-900/80 backdrop-blur-md shadow-2xl shadow-emerald-500/10 p-4">
+                    <div class="relative">
+                        <video id="video-feed" autoplay playsinline muted class="w-full rounded-lg bg-gray-800 shadow-inner" style="max-height: 500px;"></video>
+                        <canvas id="hidden-canvas" width="640" height="480" class="hidden"></canvas>
+                        <canvas id="overlay-canvas" width="640" height="480" class="absolute inset-0 w-full h-full rounded-lg pointer-events-none" style="max-height: 500px;"></canvas>
+
+                        <div id="detection-status-overlay" class="absolute top-4 left-4 bg-gradient-to-r from-red-500/90 to-orange-500/90 text-white px-4 py-2 rounded-lg font-bold text-lg shadow-lg animate-pulse backdrop-blur-sm hidden">
+                            🔥 HITTING: <span id="current-hit-duration">0.0</span>s
+                        </div>
+
+                        <div id="led-detection-indicator" class="absolute top-4 right-4 bg-gradient-to-r from-emerald-500/90 to-green-500/90 text-white px-3 py-1 rounded-lg text-sm font-bold shadow-lg backdrop-blur-sm hidden">
+                            LED: <span id="led-confidence">0</span>%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Detection Status -->
+                <div class="rounded-lg border border-emerald-500/30 bg-gray-900/80 backdrop-blur-md shadow-2xl shadow-emerald-500/10 p-6">
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <div id="ai-status-message" class="text-xl font-bold text-emerald-400 mb-2">Initializing AI detection...</div>
+                            <div id="ai-status-duration" class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-400 animate-pulse hidden">
+                                0.0s
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-emerald-300">LED Confidence</span>
+                                    <span id="display-led-confidence" class="text-emerald-400">0%</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 shadow-inner">
+                                    <div id="progress-led-confidence" class="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-emerald-300">LED Brightness</span>
+                                    <span id="display-led-brightness" class="text-emerald-400">0</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 shadow-inner">
+                                    <div id="progress-led-brightness" class="bg-gradient-to-r from-blue-500 to-cyan-500 h-3 rounded-full" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats & Settings -->
+            <div class="space-y-6">
+                <!-- User Stats -->
+                <div class="rounded-lg border border-emerald-500/30 bg-gray-900/80 backdrop-blur-md shadow-2xl shadow-emerald-500/10 p-6">
+                    <h3 class="text-emerald-400 text-lg font-semibold flex items-center gap-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+                        Performance Stats
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="text-center p-4 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-lg border border-emerald-500/50 shadow-lg">
+                            <div id="stat-points" class="text-3xl font-bold text-emerald-400">0</div>
+                            <div class="text-sm text-emerald-300">Total Points</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-orange-500/20 to-red-500/20 rounded-lg border border-orange-500/50 shadow-lg">
+                            <div id="stat-total-hits" class="text-3xl font-bold text-orange-400">0</div>
+                            <div class="text-sm text-orange-300">Total Hits</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg border border-blue-500/50 shadow-lg">
+                            <div id="stat-longest-hit" class="text-3xl font-bold text-blue-400">0.0s</div>
+                            <div class="text-sm text-blue-300">Longest Hit</div>
+                        </div>
+                        <div class="text-center p-4 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg border border-purple-500/50 shadow-lg">
+                            <div id="stat-avg-duration" class="text-3xl font-bold text-purple-400">0.0s</div>
+                            <div class="text-sm text-purple-300">Avg Duration</div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mt-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-emerald-300">Efficiency</span>
+                            <span id="stat-efficiency" class="text-emerald-400">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div id="progress-efficiency" class="bg-gradient-to-r from-emerald-500 to-green-500 h-2 rounded-full" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button id="reset-stats-button" class="flex-1 border border-red-500/50 text-red-400 hover:bg-red-500/20 bg-transparent shadow-lg hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-105 px-4 py-2 rounded-lg text-sm font-medium">
+                            Reset Stats
+                        </button>
+                        <button id="export-data-button" class="flex-1 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 bg-transparent shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 transform hover:scale-105 px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Settings -->
+                <div class="rounded-lg border border-emerald-500/30 bg-gray-900/80 backdrop-blur-md shadow-2xl shadow-emerald-500/10 p-6">
+                    <h3 class="text-emerald-400 text-lg font-semibold flex items-center gap-2 mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2.73l-.15.1a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1 0-2.73l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        AI Detection Settings
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="sensitivity-slider" class="text-sm text-emerald-300 block mb-2">
+                                AI Sensitivity: <span id="sensitivity-value">85</span>%
+                            </label>
+                            <input type="range" id="sensitivity-slider" min="50" max="100" value="85"
+                                   class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+
+                        <div>
+                            <label for="brightness-slider" class="text-sm text-emerald-300 block mb-2">
+                                LED Brightness: <span id="brightness-value">200</span>
+                            </label>
+                            <input type="range" id="brightness-slider" min="150" max="255" value="200"
+                                   class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+
+                        <div>
+                            <label for="min-duration-slider" class="text-sm text-emerald-300 block mb-2">
+                                Min Hit Duration: <span id="min-duration-value">1.0</span>s
+                            </label>
+                            <input type="range" id="min-duration-slider" min="0.5" max="5" step="0.5" value="1"
+                                   class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+
+                        <div class="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                            <span class="text-sm text-emerald-300">Face Detection Zone</span>
+                            <input type="checkbox" id="face-detection-checkbox" checked
+                                   class="w-4 h-4 text-emerald-600 bg-gray-700 border-gray-600 rounded focus:ring-emerald-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
 </body>
 </html>
