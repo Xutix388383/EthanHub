@@ -2,31 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blinker Tracker 🌿</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="usernamePrompt">
+  <!-- Username Prompt -->
+  <div id="usernamePrompt" role="dialog" aria-label="Username Entry">
     <h1>Enter Your Blinker Name 🌿</h1>
-    <input type="text" id="usernameInput" placeholder="420King">
-    <button onclick="saveUsername()">Start Tracking</button>
+    <input type="text" id="usernameInput" placeholder="420King" aria-label="Username">
+    <button id="startBtn">Start Tracking</button>
   </div>
 
-  <div class="container">
+  <!-- Main Container -->
+  <div class="container" aria-live="polite">
     <h1>Blinker Tracker 🌿</h1>
-    <button onclick="switchCamera()">Switch Camera</button>
-    <video id="video" autoplay playsinline></video>
+    <button id="switchBtn">Switch Camera</button>
+    <video id="video" autoplay playsinline muted></video>
     <canvas id="canvas" width="640" height="480"></canvas>
     <p class="status">Initializing camera...</p>
     <p class="points">Points: 0</p>
 
+    <!-- Leaderboard -->
     <div id="leaderboard">
       <h2>Live Leaderboard</h2>
       <ul id="leaderboardList"></ul>
     </div>
   </div>
 
+  <!-- Sound Effects -->
   <audio id="blinkerSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
-  <script src="main.js"></script>
+
+  <!-- Scripts -->
+  <script src="main.js" defer></script>
 </body>
 </html>
