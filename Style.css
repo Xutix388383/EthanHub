@@ -1,32 +1,8 @@
-body {
-  background-color: #0f0f0f;
-  color: crimson;
-  font-family: 'Gotham', sans-serif;
-  margin: 0;
-  padding: 0;
-}
-.container {
-  width: 90%;
-  max-width: 700px;
-  margin: 40px auto;
-  text-align: center;
-}
-#editor {
-  height: 200px;
-  width: 100%;
-  border: 2px solid crimson;
-}
-button {
-  background-color: crimson;
-  color: white;
-  padding: 10px 20px;
-  margin-top: 10px;
-  border: none;
-  font-weight: bold;
-  cursor: pointer;
-}
-.gui-container {
-  margin-top: 20px;
+.mock-gui {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   padding: 20px;
   background-color: #1a1a1a;
   border: 1px solid crimson;
@@ -35,13 +11,11 @@ button {
   background-color: #333;
   color: crimson;
   border: none;
-  padding: 10px;
-  margin: 5px;
+  padding: 10px 20px;
   font-weight: bold;
   cursor: pointer;
 }
-#status {
-  margin-top: 15px;
+.mock-gui p {
   font-size: 14px;
-  color: limegreen;
+  color: white;
 }
