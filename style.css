@@ -1,23 +1,5 @@
 /* Custom CSS for slider thumb */
-.slider-thumb::-webkit-slider-thumb {
-  appearance: none;
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #10b981, #059669);
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-}
-
-.slider-thumb::-moz-range-thumb {
-  height: 20px;
-  width: 20px;
-  border-radius: 50%;
-  background: linear-gradient(45deg, #10b981, #059669);
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-}
+/* Removed as sliders are no longer present in the UI */
 
 /* Basic Tailwind-like classes for elements not covered by CDN */
 /* These are simplified and might not perfectly match shadcn/ui styles */

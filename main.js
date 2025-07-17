@@ -34,12 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetStatsButton = document.getElementById("reset-stats-button")
   const exportDataButton = document.getElementById("export-data-button")
 
-  const sensitivitySlider = document.getElementById("sensitivity-slider")
-  const sensitivityValue = document.getElementById("sensitivity-value")
-  const brightnessSlider = document.getElementById("brightness-slider")
-  const brightnessValue = document.getElementById("brightness-value")
-  const minDurationSlider = document.getElementById("min-duration-slider")
-  const minDurationValue = document.getElementById("min-duration-value")
+  // Only remaining setting toggle
   const faceDetectionCheckbox = document.getElementById("face-detection-checkbox")
 
   // --- Global State ---
@@ -50,7 +45,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedCamera = ""
   let cameraError = ""
   let isDetecting = false
-  const detectionStart = null
   let currentHitDuration = 0
   let ledDetection = { detected: false, confidence: 0, position: { x: 0, y: 0 }, brightness: 0 }
   let status = "Initializing AI detection..."
@@ -67,19 +61,20 @@ document.addEventListener("DOMContentLoaded", () => {
     weeklyStats: {},
     monthlyStats: {},
   }
-  let settings = {
-    sensitivity: 85,
-    minHitDuration: 1,
-    maxHitDuration: 30,
-    faceDetectionEnabled: true,
-    ledBrightness: 200,
+  // Settings are now mostly fixed or auto-calibrated
+  const settings = {
+    sensitivity: 85, // Will be auto-calibrated
+    minHitDuration: 1.0, // Fixed default
+    maxHitDuration: 30.0, // Fixed default
+    faceDetectionEnabled: true, // User toggleable
+    ledBrightness: 200, // Will be auto-calibrated
   }
 
   // --- Refs (simulated with global variables for vanilla JS) ---
   let streamRef = null
   let animationRef = null
   const audioRef = new Audio(
-    "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT",
+    "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8t2JNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT",
   )
   audioRef.volume = 0.3
   let hitStartTimeRef = null
@@ -172,13 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     displayLedBrightness.textContent = Math.round(ledDetection.brightness)
     progressLedBrightness.style.width = `${(ledDetection.brightness / 255) * 100}%`
 
-    // Update settings sliders
-    sensitivityValue.textContent = settings.sensitivity
-    sensitivitySlider.value = settings.sensitivity
-    brightnessValue.textContent = settings.ledBrightness
-    brightnessSlider.value = settings.ledBrightness
-    minDurationValue.textContent = settings.minHitDuration.toFixed(1)
-    minDurationSlider.value = settings.minHitDuration
+    // Update face detection checkbox
     faceDetectionCheckbox.checked = settings.faceDetectionEnabled
 
     // Update camera button text/style
@@ -285,8 +274,11 @@ document.addEventListener("DOMContentLoaded", () => {
         videoFeed.onloadedmetadata = resolve
       })
 
+      // Auto-calibrate settings after camera is ready
+      await autoCalibrate()
+
       cameraActive = true
-      status = "🧠 AI detection ready - Position cart LED near mouth"
+      // Status is set by autoCalibrate
       startAIDetectionLoop()
     } catch (error) {
       console.error("Camera initialization failed:", error)
@@ -297,6 +289,102 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       updateUI()
     }
+  }
+
+  async function autoCalibrate() {
+    status = "🤖 Auto-calibrating AI settings..."
+    updateUI()
+
+    const video = videoFeed
+    const canvas = hiddenCanvas
+    const ctx = canvas.getContext("2d")
+
+    let totalBrightness = 0
+    let totalConfidence = 0
+    let samples = 0
+    const maxSamples = 30 // Take a few frames for calibration
+
+    return new Promise((resolve) => {
+      const calibrateFrame = () => {
+        if (!cameraActive || samples >= maxSamples) {
+          if (samples > 0) {
+            // Set brightness slightly below average of detected bright spots
+            settings.ledBrightness = Math.max(150, Math.min(250, totalBrightness / samples - 10))
+            // Set sensitivity slightly below average confidence
+            settings.sensitivity = Math.max(50, Math.min(95, totalConfidence / samples - 5))
+          } else {
+            // Fallback to default if no bright spots found during calibration
+            settings.ledBrightness = 200
+            settings.sensitivity = 85
+          }
+          status = "🧠 AI detection ready - Position cart LED near mouth"
+          updateUI()
+          resolve()
+          return
+        }
+
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+
+        // A temporary function to find the brightest white-ish spot for calibration
+        const tempDetection = findBrightestSpotForCalibration(imageData, canvas.width, canvas.height)
+
+        if (tempDetection.detected) {
+          totalBrightness += tempDetection.brightness
+          totalConfidence += tempDetection.confidence
+          samples++
+        }
+
+        requestAnimationFrame(calibrateFrame)
+      }
+      calibrateFrame()
+    })
+  }
+
+  // Helper for autoCalibrate to find brightest spot without current settings
+  function findBrightestSpotForCalibration(imageData, width, height) {
+    const data = imageData.data
+    let bestSpot = { detected: false, confidence: 0, position: { x: 0, y: 0 }, brightness: 0 }
+
+    const mouthRegion = {
+      startX: Math.floor(width * 0.3),
+      endX: Math.floor(width * 0.7),
+      startY: Math.floor(height * 0.6),
+      endY: Math.floor(height * 0.9),
+    }
+
+    for (let y = mouthRegion.startY; y < mouthRegion.endY; y += 4) {
+      // Increase step for faster calibration
+      for (let x = mouthRegion.startX; x < mouthRegion.endX; x += 4) {
+        const index = (y * width + x) * 4
+        const r = data[index]
+        const g = data[index + 1]
+        const b = data[index + 2]
+
+        const brightness = (r + g + b) / 3
+        const isWhiteish = Math.abs(r - g) < 30 && Math.abs(g - b) < 30 && Math.abs(r - b) < 30
+
+        if (brightness > 100 && isWhiteish) {
+          // Lower initial threshold for finding *any* bright spot
+          const spotSize = checkSpotSize(data, x, y, width, height, 100) // Use a fixed threshold for size check
+
+          if (spotSize > 2 && spotSize < 50) {
+            const confidence = Math.min(100, (brightness / 255) * 100 + (spotSize / 10) * 20)
+            if (confidence > bestSpot.confidence) {
+              bestSpot = {
+                detected: true,
+                confidence,
+                position: { x, y },
+                brightness,
+              }
+            }
+          }
+        }
+      }
+    }
+    return bestSpot
   }
 
   function startAIDetectionLoop() {
@@ -585,7 +673,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = {
       username,
       stats: userStats,
-      settings,
+      settings: {
+        minHitDuration: settings.minHitDuration,
+        maxHitDuration: settings.maxHitDuration,
+        faceDetectionEnabled: settings.faceDetectionEnabled,
+      }, // Only export fixed/user-toggleable settings
       exportDate: new Date().toISOString(),
     }
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
@@ -601,7 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const deviceKey = `blinker_${deviceId}`
     const savedUsername = localStorage.getItem(`${deviceKey}_username`)
     const savedStats = localStorage.getItem(`${deviceKey}_stats`)
-    const savedSettings = localStorage.getItem(`${deviceKey}_settings`)
+    const savedSettings = localStorage.getItem(`${deviceKey}_settings`) // Load only for faceDetectionEnabled
 
     if (savedUsername) {
       username = savedUsername
@@ -617,7 +709,11 @@ document.addEventListener("DOMContentLoaded", () => {
       userStats.lastActive = new Date(userStats.lastActive) // Convert back to Date object
     }
     if (savedSettings) {
-      settings = JSON.parse(savedSettings)
+      const parsedSettings = JSON.parse(savedSettings)
+      // Only load faceDetectionEnabled, others are auto-calibrated or fixed
+      if (parsedSettings.faceDetectionEnabled !== undefined) {
+        settings.faceDetectionEnabled = parsedSettings.faceDetectionEnabled
+      }
     }
     updateUI()
   }
@@ -626,7 +722,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const deviceKey = `blinker_${deviceId}`
     localStorage.setItem(`${deviceKey}_username`, username)
     localStorage.setItem(`${deviceKey}_stats`, JSON.stringify(userStats))
-    localStorage.setItem(`${deviceKey}_settings`, JSON.stringify(settings))
+    // Only save user-toggleable settings
+    localStorage.setItem(
+      `${deviceKey}_settings`,
+      JSON.stringify({ faceDetectionEnabled: settings.faceDetectionEnabled }),
+    )
   }
 
   // --- Event Listeners ---
@@ -658,24 +758,6 @@ document.addEventListener("DOMContentLoaded", () => {
       stopCamera()
       initializeCamera()
     }
-  })
-
-  sensitivitySlider.addEventListener("input", (e) => {
-    settings.sensitivity = Number(e.target.value)
-    sensitivityValue.textContent = settings.sensitivity
-    saveData()
-  })
-
-  brightnessSlider.addEventListener("input", (e) => {
-    settings.ledBrightness = Number(e.target.value)
-    brightnessValue.textContent = settings.ledBrightness
-    saveData()
-  })
-
-  minDurationSlider.addEventListener("input", (e) => {
-    settings.minHitDuration = Number(e.target.value)
-    minDurationValue.textContent = settings.minHitDuration.toFixed(1)
-    saveData()
   })
 
   faceDetectionCheckbox.addEventListener("change", (e) => {
