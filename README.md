@@ -1,12 +1,12 @@
-# Gunfight Unlocker Visualizer
+# Script Previewer
 
-A web-based tool to test and visualize Roblox unlocker scripts. Paste your Lua script, and if it creates a GUI, you'll see a live preview.
+A futuristic web-based tool to test and visualize Roblox unlocker scripts. Paste your Lua script, and if it creates a GUI, you'll see a live preview. Includes script history tracking and interactive simulation.
 
 ## Features
 - Lua syntax highlighting
-- GUI detection and simulation
-- Anti-detection status
-- Gothic-themed interface
+- Real-time GUI simulation
+- Script history sidebar
+- Futuristic neon styling
 
 ## Deploy with Netlify
 1. Push this repo to GitHub
