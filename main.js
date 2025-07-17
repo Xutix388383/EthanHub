@@ -2,47 +2,57 @@ var editor = ace.edit("editor");
 editor.setTheme("ace/theme/monokai");
 editor.session.setMode("ace/mode/lua");
 
-function visualizeScript() {
-  const script = editor.getValue();
-  const guiPreview = document.getElementById("gui-preview");
-  guiPreview.innerHTML = ""; // Clear previous preview
+const historyList = document.getElementById("historyList");
+let scriptHistory = [];
 
-  // Basic GUI detection
+function updateHistory(script) {
+  if (!script.trim()) return;
+  if (scriptHistory.includes(script)) return;
+
+  scriptHistory.unshift(script);
+  const item = document.createElement("li");
+  item.textContent = script.substring(0, 40) + "...";
+  item.onclick = () => {
+    editor.setValue(script, 1);
+  };
+  historyList.prepend(item);
+}
+
+setInterval(() => {
+  const script = editor.getValue();
+  visualizeScript(script);
+}, 1000);
+
+function visualizeScript(script) {
+  const guiPreview = document.getElementById("gui-preview");
+  guiPreview.innerHTML = "";
+
   if (script.includes("Instance.new(\"ScreenGui\")")) {
     const mockGui = document.createElement("div");
     mockGui.className = "mock-gui";
 
-    // Simulate Unlock All button
-    if (script.includes("Unlock All") || script.includes("UnlockAll")) {
+    if (script.includes("Unlock All")) {
       const unlockBtn = document.createElement("button");
       unlockBtn.textContent = "🔫 Unlock All Guns";
       unlockBtn.onclick = () => alert("✅ Guns unlocked!");
       mockGui.appendChild(unlockBtn);
     }
 
-    // Simulate Skin Unlocker button
-    if (script.includes("Unlock Skins") || script.includes("UnlockAllSkins")) {
+    if (script.includes("Unlock Skins")) {
       const skinBtn = document.createElement("button");
       skinBtn.textContent = "🎨 Unlock All Skins";
       skinBtn.onclick = () => alert("✅ Skins unlocked!");
       mockGui.appendChild(skinBtn);
     }
 
-    // Simulate Credit Label
-    if (script.includes("Credits") || script.includes("player.Credits")) {
+    if (script.includes("Credits")) {
       const creditLabel = document.createElement("p");
       creditLabel.textContent = "💰 Credits: ∞";
-      creditLabel.style.color = "limegreen";
       mockGui.appendChild(creditLabel);
     }
 
-    // Simulate Anti-Detection Status
-    const statusLabel = document.createElement("p");
-    statusLabel.textContent = "🛡️ Anti-Detection: Active";
-    statusLabel.style.color = "limegreen";
-    mockGui.appendChild(statusLabel);
-
     guiPreview.appendChild(mockGui);
+    updateHistory(script);
   } else {
     guiPreview.innerHTML = `<p>No GUI detected in script.</p>`;
   }
