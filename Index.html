@@ -121,6 +121,8 @@
     </div>
   </div>
 
+  <audio id="blinkerSound" src="https://www.soundjay.com/button/sounds/button-16.mp3" preload="auto"></audio>
+
   <script>
     let video = document.getElementById('video');
     let canvas = document.getElementById('canvas');
@@ -128,10 +130,12 @@
     let statusText = document.querySelector('.status');
     let pointsText = document.querySelector('.points');
     let leaderboardList = document.getElementById('leaderboardList');
+    let blinkerSound = document.getElementById('blinkerSound');
 
     let tracking = false;
     let startTime = null;
     let points = 0;
+    let blinkers = 0;
     let username = localStorage.getItem('blinkerUsername') || null;
     let currentStream = null;
     let useFrontCamera = true;
@@ -209,7 +213,7 @@
         const brightness = (r + g + b) / 3;
         if (brightness > 220) brightPixels++;
       }
-      return brightPixels < 500 ? brightness : 0; // ignore large bright areas
+      return brightPixels < 500 ? brightPixels : 0;
     }
 
     function handleHit(seconds) {
@@ -221,10 +225,13 @@
         message += " 💀 Double Rip Demon! +15 points";
       } else if (seconds >= 10) {
         points += 10;
+        blinkers += 1;
         message += " 🔥 Blinker! +10 points";
+        blinkerSound.play();
       } else {
         message += " 😶 Not a blinker.";
       }
+
       statusText.textContent = message;
       pointsText.textContent = `Points: ${points}`;
       updateLeaderboard();
@@ -232,20 +239,11 @@
 
     function updateLeaderboard() {
       let board = JSON.parse(localStorage.getItem('blinkerLeaderboard') || '{}');
-      board[username] = points;
+      board[username] = { points, blinkers };
       localStorage.setItem('blinkerLeaderboard', JSON.stringify(board));
 
       leaderboardList.innerHTML = '';
       Object.entries(board)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([name, score]) => {
-          const li = document.createElement('li');
-          li.textContent = `${name}: ${score} pts`;
-          leaderboardList.appendChild(li);
-        });
-    }
-
-    if (username) initCamera();
-  </script>
-</body>
-</html>
+        .sort((a, b) => b[1].points - a[1].points)
+        .forEach(([name, data]) => {
+          const li = document.createElement('li
