@@ -1,10 +1,13 @@
-let video = document.getElementById('video');
-let canvas = document.getElementById('canvas');
-let ctx = canvas.getContext('2d');
-let statusText = document.querySelector('.status');
-let pointsText = document.querySelector('.points');
-let leaderboardList = document.getElementById('leaderboardList');
-let blinkerSound = document.getElementById('blinkerSound');
+// DOM Elements
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const statusText = document.querySelector('.status');
+const pointsText = document.querySelector('.points');
+const leaderboardList = document.getElementById('leaderboardList');
+const blinkerSound = document.getElementById('blinkerSound');
+const startBtn = document.getElementById('startBtn');
+const switchBtn = document.getElementById('switchBtn');
 
 let tracking = false;
 let startTime = null;
@@ -14,12 +17,14 @@ let username = localStorage.getItem('blinkerUsername') || null;
 let currentStream = null;
 let useFrontCamera = true;
 
+// Initialize if username exists
 if (username) {
   document.getElementById('usernamePrompt').style.display = 'none';
   initCamera();
 }
 
-function saveUsername() {
+// Save username and start
+startBtn.addEventListener('click', () => {
   const input = document.getElementById('usernameInput').value.trim();
   if (input) {
     username = input;
@@ -27,8 +32,15 @@ function saveUsername() {
     document.getElementById('usernamePrompt').style.display = 'none';
     initCamera();
   }
-}
+});
 
+// Switch camera
+switchBtn.addEventListener('click', () => {
+  useFrontCamera = !useFrontCamera;
+  initCamera();
+});
+
+// Initialize camera
 function initCamera() {
   const constraints = {
     video: {
@@ -48,15 +60,11 @@ function initCamera() {
     })
     .catch(err => {
       statusText.textContent = "Camera access denied.";
-      console.error(err);
+      console.error("Camera error:", err);
     });
 }
 
-function switchCamera() {
-  useFrontCamera = !useFrontCamera;
-  initCamera();
-}
-
+// LED detection loop
 function detectLoop() {
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
   const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -81,6 +89,7 @@ function detectLoop() {
   requestAnimationFrame(detectLoop);
 }
 
+// Detect small bright spots (LEDs)
 function detectSmallBrightSpots(data) {
   let brightPixels = 0;
   for (let i = 0; i < data.length; i += 4) {
@@ -91,8 +100,10 @@ function detectSmallBrightSpots(data) {
   return brightPixels < 500 ? brightPixels : 0;
 }
 
+// Handle hit duration and scoring
 function handleHit(seconds) {
   let message = `Hit lasted ${seconds.toFixed(1)}s.`;
+
   if (seconds >= 20) {
     message += " 🚨 Take a break and breathe!";
   } else if (seconds >= 15) {
@@ -112,6 +123,7 @@ function handleHit(seconds) {
   updateLeaderboard();
 }
 
+// Update leaderboard
 function updateLeaderboard() {
   let board = JSON.parse(localStorage.getItem('blinkerLeaderboard') || '{}');
   board[username] = { points, blinkers };
