@@ -1,20 +1,26 @@
-body {
+/* Reset & Base */
+* {
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+body {
   font-family: 'Segoe UI', sans-serif;
   background: url('https://i.imgur.com/7yZJX9V.png') repeat;
   background-size: 150px;
   color: #d4f8d4;
   text-align: center;
+  line-height: 1.6;
 }
 
-h1 {
-  font-size: 2.5em;
+/* Headings */
+h1, h2 {
   color: #00ff88;
   text-shadow: 0 0 10px #00ff88;
-  margin-top: 1em;
 }
 
+/* Container */
 .container {
   background: rgba(0, 0, 0, 0.6);
   padding: 2em;
@@ -25,21 +31,25 @@ h1 {
   box-shadow: 0 0 20px #00ff88;
 }
 
+/* Status & Points */
 .status, .points {
   font-size: 1.2em;
   margin-top: 1em;
 }
 
+/* Video */
 video {
   width: 100%;
   border-radius: 12px;
   margin-top: 1em;
 }
 
+/* Canvas */
 canvas {
   display: none;
 }
 
+/* Leaderboard */
 #leaderboard {
   margin-top: 2em;
   text-align: left;
@@ -48,17 +58,13 @@ canvas {
   border-radius: 8px;
 }
 
-#leaderboard h2 {
-  color: #00ff88;
-  margin-bottom: 0.5em;
-}
-
 #leaderboard ul {
   list-style: none;
   padding: 0;
   color: #aaffaa;
 }
 
+/* Username Prompt */
 #usernamePrompt {
   position: fixed;
   top: 0;
@@ -80,8 +86,11 @@ canvas {
   margin-top: 1em;
   border-radius: 8px;
   border: none;
+  width: 60%;
+  max-width: 300px;
 }
 
+/* Buttons */
 button {
   margin-top: 1em;
   padding: 0.5em 1em;
@@ -91,4 +100,9 @@ button {
   border-radius: 8px;
   cursor: pointer;
   color: #000;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #00cc66;
 }
